@@ -1,0 +1,38 @@
+@app.route('/principal/assignments/grade', methods=['POST'])
+def grade_assignment():
+    data = request.get_json()
+    
+    # Extract principal_id from headers
+    principal_id = request.headers['X-Principal']['principal_id']
+    
+    # Validate input
+    assignment_id = data.get("id")
+    grade = data.get("grade")
+    
+    if not assignment_id or grade is None:
+        return jsonify({"error": "Assignment ID and grade are required"}), 400
+    
+    # Fetch the assignment to grade
+    assignment = db.session.query(Assignment).filter_by(id=assignment_id).first()
+    
+    if not assignment:
+        return jsonify({"error": "Assignment not found"}), 404
+    
+    # Update the assignment's grade
+    assignment.grade = grade
+    assignment.state = 'GRADED'  # Update state to GRADED
+    db.session.commit()
+    
+    # Return the updated assignment data
+    return jsonify({
+        "data": {
+            "id": assignment.id,
+            "content": assignment.content,
+            "created_at": assignment.created_at.isoformat(),
+            "grade": assignment.grade,
+            "state": assignment.state,
+            "student_id": assignment.student_id,
+            "teacher_id": assignment.teacher_id,
+            "updated_at": assignment.updated_at.isoformat(),
+        }
+    }), 200
